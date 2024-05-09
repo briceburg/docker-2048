@@ -3,7 +3,10 @@ on:
   release:
     types: [published]
 
-runs-on: ubuntu-latest
+jobs:
+  release:
+    runs-on: ubuntu-latest
     steps:
+    - uses: hmarr/debug-action@v3
     - run: |
         echo placeholder
