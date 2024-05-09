@@ -1,7 +1,9 @@
 name: cicd
 
 on:
-  push
+  push:
+    branches:
+    - '**'
 
 jobs:
   checks:

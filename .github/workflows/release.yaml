@@ -3,7 +3,53 @@ on:
   release:
     types: [published]
 
-runs-on: ubuntu-latest
+jobs:
+  distribute-images:
+    permissions:
+      contents: read
+      packages: write
+    runs-on: ubuntu-latest
     steps:
-    - run: |
-        echo placeholder
+    - name: Login to DockerHub
+      uses: docker/login-action@e92390c5fb421da1463c202d546fed0ec5c39f20 # v3.1.0
+      with:
+        registry: docker.io
+        username: ${{ vars.DOCKERHUB_USERNAME }}
+        password: ${{ secrets.DOCKERHUB_PASSWORD }}
+
+    - name: Login to GitHub Container Registry
+      uses: docker/login-action@e92390c5fb421da1463c202d546fed0ec5c39f20 # v3.1.0
+      with:
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
+    - uses: imjasonh/setup-crane@00c9e93efa4e1138c9a7a5c594acd6c75a2fbf0c # v0.3
+      with:
+        version: v0.12.1
+    - name: publish images
+      env:
+        PUBLISH_REGISTRIES: |
+          docker.io
+          ghcr.io
+        SOURCE_IMAGE: ghcr.io/${{ github.repository }}:${{ github.sha }}
+      run: |
+        set -o xtrace
+        tags=( "${{ github.ref_name }}" )
+
+        latest_tag=$(curl -sL -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+          https://api.github.com/repos/${{ github.repository }}/releases/latest | jq -r '.tag_name')
+
+        # if this has been marked as the 'latest' release, add the :latest tag
+        [ "$latest_tag" == "${tags[0]}" ] && tags+=( "latest" )
+
+        crane validate --remote "$SOURCE_IMAGE" || {
+          echo "::error ::file=inline,line=43::Source Image Not Found. Has the main branch push action finished publishing?"
+          exit 1
+        }
+
+        for registry in $PUBLISH_REGISTRIES; do
+          for tag in "${tags[@]}"; do
+            crane cp "$SOURCE_IMAGE" "$registry/${{ github.repository }}:$tag"
+          done
+        done
