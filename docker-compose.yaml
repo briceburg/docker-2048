@@ -1,0 +1,8 @@
+include:
+  - docker-compose.ci.yaml
+
+services:
+  app:
+    build: .
+    ports:
+      - "${PORT:-8043}:8043"

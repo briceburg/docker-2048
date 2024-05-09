@@ -1,0 +1,25 @@
+name: cicd
+
+on:
+  push
+
+jobs:
+  checks:
+    uses: ./.github/workflows/checks.yaml 
+    secrets: inherit
+  
+  build-publish:
+    needs: [checks]
+    if: always() && !contains(needs.*.result, 'failure')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+    - name: build and publish image
+      id: docker
+      uses: briceburg/github-action-build-dockerfile@33f5dd08e8b687cd9c4b130db159d5ddc9eb34a3
+      with:
+        push: ${{ github.ref_name == 'main' && 'true' || 'false' }} # only push if image is release eligible
+        registry_token: ${{ secrets.GITHUB_TOKEN }}

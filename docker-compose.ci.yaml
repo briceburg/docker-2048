@@ -1,0 +1,29 @@
+services:
+  ci:
+    profiles: ["ci"]
+    build:
+      dockerfile: Dockerfile.ci
+    volumes:
+      - ${HOST_ROOT:-.}:/work:ro
+      - /var/run/docker.sock:/var/run/docker.sock
+    working_dir: /work
+    environment:
+      COMPOSE_PROJECT_NAME: "$COMPOSE_PROJECT_NAME-ci-${GITHUB_RUN_ID:-1}"
+      HOST_ROOT: $PWD
+
+  lint:
+    extends: ci
+    image: hadolint/hadolint@sha256:fff226bdf9ebcc08db47fb90ee144dd770120b35c2b1cbbb46e932a650cfe232
+    command: hadolint Dockerfile
+
+  tests:
+    extends: ci
+    command: |
+      /bin/sh -c '
+        set -eo pipefail
+        trap "rv=\$$?; docker compose down -v; exit \$$rv" EXIT
+
+        echo "[test] lint"
+        docker compose run --rm lint
+        echo [ok]
+      '

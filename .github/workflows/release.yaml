@@ -1,0 +1,9 @@
+name: release
+on:
+  release:
+    types: [published]
+
+runs-on: ubuntu-latest
+    steps:
+    - run: |
+        echo placeholder
