@@ -1,6 +1,6 @@
 # docker-2048
 
-The game of [2048](https://github.com/gabrielecirulli/2048) hosted by [goStatic](https://github.com/PierreZ/goStatic) with a healthcheck.
+The game of [2048](https://github.com/gabrielecirulli/2048) served by [goStatic](https://github.com/PierreZ/goStatic) with a healthcheck.
 
 ## Usage
 
